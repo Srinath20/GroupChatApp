@@ -15,7 +15,7 @@ document.addEventListener('DOMContentLoaded', () => {
         };
 
         try {
-            const response = await fetch('/user/signup', {
+            const response = await fetch('http://localhost:3000/user/signup', {
                 method: 'POST',
                 headers: {
                     'Content-Type': 'application/json'

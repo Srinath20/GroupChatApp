@@ -4,9 +4,13 @@ const sequelize = require('./util/db');
 const userRoutes = require('./routes/userRoutes');
 const PORT = 3000;
 const app = express();
+const cors = require('cors');
 app.use(express.json());
 app.use(express.urlencoded({ extended: true }));
-
+app.use(cors({
+    origin: 'http://localhost:3000',
+    methods: ['GET', 'POST', 'PUT', 'DELETE']
+}));
 sequelize.sync()
     .then(app.listen(PORT, () => {
         console.log(`Server is running on port ${PORT}`);
