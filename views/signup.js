@@ -25,7 +25,7 @@ document.addEventListener('DOMContentLoaded', () => {
             if (response.ok) {
                 const data = await response.json();
                 alert('User created successfully!');
-                window.location.href = '/login';
+                window.location.href = './login.html';
             } else {
                 const errorData = await response.json();
                 alert(errorData.message);
