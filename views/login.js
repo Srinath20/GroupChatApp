@@ -16,13 +16,13 @@ document.getElementById('loginForm').addEventListener('submit', async function (
         const data = await response.json();
 
         if (response.ok) {
-            localStorage.setItem('token', data.token);
-            alert('Login successful!');
+            // document.cookie = `token=${data.token}; path=/; secure; HttpOnly;`; //you can't see cookies with HttpOnly in the browser console.
+            document.cookie = `token=${data.token}; path=/; SameSite=Strict`;
+            console.log('Login successful and token stored in cookie');
         } else {
-            alert(data.message || 'Login failed');
+            console.error(data.message);
         }
     } catch (error) {
         console.error('Error during login:', error);
-        alert('An error occurred. Please try again later.');
     }
 });

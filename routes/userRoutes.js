@@ -1,7 +1,10 @@
 const express = require('express');
 const bcrypt = require('bcrypt');
 const jwt = require('jsonwebtoken');
+const dotenv = require('dotenv');
 const User = require('../models/user');
+
+dotenv.config();
 const router = express.Router();
 
 router.post('/signup', async (req, res) => {
@@ -14,6 +17,7 @@ router.post('/signup', async (req, res) => {
         }
 
         const hashedPassword = await bcrypt.hash(password, 10);
+
         const newUser = await User.create({
             name,
             email,
@@ -33,21 +37,20 @@ router.post('/login', async (req, res) => {
 
     try {
         const user = await User.findOne({ where: { email } });
+
         if (!user) {
             return res.status(404).json({ message: 'User not found' });
         }
-        const isPasswordValid = await bcrypt.compare(password, user.password);
-        if (!isPasswordValid) {
-            return res.status(401).json({ message: 'Incorrect password' });
-        }
-        //JWT Token creation
-        const token = jwt.sign(
-            { userId: user.id, email: user.email },
-            process.env.TOKEN_SECRET,
-            { expiresIn: '1800s' }
-        );
 
-        res.json({ token });
+        const isPasswordValid = await bcrypt.compare(password, user.password);
+
+        if (!isPasswordValid) {
+            return res.status(401).json({ message: 'User not authorized' });
+        }
+
+        const token = jwt.sign({ id: user.id }, process.env.TOKEN_SECRET, { expiresIn: '1800s' });
+
+        res.status(200).json({ token });
     } catch (error) {
         console.error(error);
         res.status(500).json({ message: 'Server error' });
