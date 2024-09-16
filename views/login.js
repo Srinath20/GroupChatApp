@@ -16,9 +16,10 @@ document.getElementById('loginForm').addEventListener('submit', async function (
         const data = await response.json();
 
         if (response.ok) {
-            // document.cookie = `token=${data.token}; path=/; secure; HttpOnly;`; //you can't see cookies with HttpOnly in the browser console.
+            // Store token and user name in localStorage
             document.cookie = `token=${data.token}; path=/; SameSite=Strict`;
-            console.log('Login successful and token stored in cookie');
+            localStorage.setItem('username', data.username); // Store username in localStorage
+            window.location.href = '/chat.html'; // Redirect to chat window
         } else {
             console.error(data.message);
         }
