@@ -40,22 +40,20 @@ io.on('connection', (socket) => {
     });
 
     socket.on('chatMessage', async ({ username, message }) => {
-        io.emit('message', `${username}: ${message}`);
-
         try {
-            const response = await fetch('http://localhost:3000/chat/message', { // Use absolute URL if client and server are different
-                method: 'POST',
-                headers: {
-                    'Content-Type': 'application/json',
-                },
-                body: JSON.stringify({ username, message }),
+            const user = await User.findOne({ where: { name: username } });
+            const newMessage = await Message.create({
+                message,
+                userId: user.id
             });
 
-            const data = await response.json();
-
-            if (!response.ok) {
-                console.error('Error storing message:', data.error);
-            }
+            // Emit the new message to all connected clients
+            io.emit('newMessage', {
+                id: newMessage.id,
+                message: newMessage.message,
+                User: { name: username },
+                createdAt: newMessage.createdAt
+            });
         } catch (error) {
             console.error('Error saving message:', error);
         }
@@ -65,6 +63,7 @@ io.on('connection', (socket) => {
         console.log('A user disconnected');
     });
 });
+
 
 sequelize.sync()
     .then(() => {

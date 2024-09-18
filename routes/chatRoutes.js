@@ -3,6 +3,22 @@ const router = express.Router();
 const Message = require('../models/message');
 const User = require('../models/user');
 
+// GET /chat/messages - Get all chat messages
+router.get('/messages', async (req, res) => {
+    try {
+        const messages = await Message.findAll({
+            include: [{ model: User, attributes: ['name'] }],
+            order: [['createdAt', 'ASC']]
+        });
+        console.log('Fetched messages:', messages); // Add this line for debugging
+        res.status(200).json(messages);
+    } catch (error) {
+        console.error('Error fetching messages:', error);
+        res.status(500).json({ error: 'Failed to fetch messages' });
+    }
+});
+
+// POST /chat/message - Save chat message to the database
 router.post('/message', async (req, res) => {
     const { message, username } = req.body;
 

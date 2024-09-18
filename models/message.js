@@ -28,4 +28,6 @@ const Message = sequelize.define('Message', {
     }
 });
 
+Message.belongsTo(User);
+
 module.exports = Message;
