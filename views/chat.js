@@ -1,9 +1,6 @@
-const socket = io(); // Connect to server
-
-// Get the username from localStorage
+const socket = io();
 const username = localStorage.getItem('username');
 
-// Emit join event when the user joins
 socket.emit('joinChat', username);
 
 socket.on('message', (msg) => {
@@ -20,9 +17,8 @@ socket.on('userJoined', (msg) => {
     messageList.appendChild(newMessage);
 });
 
-// Handle sending a message
 document.getElementById('sendBtn').addEventListener('click', () => {
     const message = document.getElementById('chatInput').value;
-    socket.emit('chatMessage', { username, message }); // Send username with message
+    socket.emit('chatMessage', { username, message });
     document.getElementById('chatInput').value = '';
 });

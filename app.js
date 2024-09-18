@@ -2,16 +2,17 @@ const express = require('express');
 const path = require('path');
 const sequelize = require('./util/db');
 const userRoutes = require('./routes/userRoutes');
+const chatRoutes = require('./routes/chatRoutes');
 const cors = require('cors');
 const dotenv = require('dotenv');
-const http = require('http'); // Add this to create a server
-const { Server } = require('socket.io'); // Import socket.io
+const http = require('http');
+const { Server } = require('socket.io');
 
 dotenv.config();
 
 const app = express();
-const server = http.createServer(app); // Create a server using http
-const io = new Server(server); // Initialize socket.io with the server
+const server = http.createServer(app);
+const io = new Server(server);
 
 const PORT = 3000;
 
@@ -22,28 +23,42 @@ app.use(cors({
     methods: ['GET', 'POST', 'PUT', 'DELETE']
 }));
 
-// Serve static files
 app.use(express.static(path.join(__dirname, 'views')));
 
-// Define routes
 app.get('/', (req, res) => {
     res.sendFile(path.join(__dirname, 'views', 'signup.html'));
 });
 app.use('/user', userRoutes);
-
-// Initialize WebSocket connections
+app.use('/chat', chatRoutes);
+//Intialize connection
 io.on('connection', (socket) => {
     console.log('A user connected');
 
-    // Handle user joining chat
     socket.on('joinChat', (username) => {
-        socket.username = username; // Store the username on the socket
-        io.emit('userJoined', `${username} joined the chat`); // Broadcast that the user joined
+        socket.username = username;
+        io.emit('userJoined', `${username} joined the chat`);
     });
 
-    // Handle chat messages
-    socket.on('chatMessage', ({ username, message }) => {
-        io.emit('message', `${username}: ${message}`); // Broadcast the message with the username
+    socket.on('chatMessage', async ({ username, message }) => {
+        io.emit('message', `${username}: ${message}`);
+
+        try {
+            const response = await fetch('http://localhost:3000/chat/message', { // Use absolute URL if client and server are different
+                method: 'POST',
+                headers: {
+                    'Content-Type': 'application/json',
+                },
+                body: JSON.stringify({ username, message }),
+            });
+
+            const data = await response.json();
+
+            if (!response.ok) {
+                console.error('Error storing message:', data.error);
+            }
+        } catch (error) {
+            console.error('Error saving message:', error);
+        }
     });
 
     socket.on('disconnect', () => {
@@ -51,11 +66,9 @@ io.on('connection', (socket) => {
     });
 });
 
-
-// Sync the database and start the server
 sequelize.sync()
     .then(() => {
-        server.listen(PORT, () => { // app.listen() method works fine for a typical Express app, but since we need to add WebSocket functionality (via Socket.IO), we use the http module to create the server instance.
+        server.listen(PORT, () => {
             console.log(`Server is running on port ${PORT}`);
         });
     })

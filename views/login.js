@@ -16,10 +16,9 @@ document.getElementById('loginForm').addEventListener('submit', async function (
         const data = await response.json();
 
         if (response.ok) {
-            // Store token and user name in localStorage
             document.cookie = `token=${data.token}; path=/; SameSite=Strict`;
-            localStorage.setItem('username', data.username); // Store username in localStorage
-            window.location.href = '/chat.html'; // Redirect to chat window
+            localStorage.setItem('username', data.username);
+            window.location.href = '/chat.html';
         } else {
             console.error(data.message);
         }
