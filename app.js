@@ -7,6 +7,8 @@ const cors = require('cors');
 const dotenv = require('dotenv');
 const http = require('http');
 const { Server } = require('socket.io');
+const User = require('./models/user');
+const Message = require('./models/message');
 
 dotenv.config();
 
@@ -15,6 +17,14 @@ const server = http.createServer(app);
 const io = new Server(server);
 
 const PORT = 3000;
+
+// Set up associations
+const models = { User, Message };
+Object.keys(models).forEach(modelName => {
+    if ('associate' in models[modelName]) {
+        models[modelName].associate(models);
+    }
+});
 
 app.use(express.json());
 app.use(express.urlencoded({ extended: true }));
@@ -30,7 +40,7 @@ app.get('/', (req, res) => {
 });
 app.use('/user', userRoutes);
 app.use('/chat', chatRoutes);
-//Intialize connection
+
 io.on('connection', (socket) => {
     console.log('A user connected');
 
@@ -47,7 +57,6 @@ io.on('connection', (socket) => {
                 userId: user.id
             });
 
-            // Emit the new message to all connected clients
             io.emit('newMessage', {
                 id: newMessage.id,
                 message: newMessage.message,
@@ -64,9 +73,9 @@ io.on('connection', (socket) => {
     });
 });
 
-
-sequelize.sync()
+sequelize.sync({ force: false })
     .then(() => {
+        console.log('Database & tables created!');
         server.listen(PORT, () => {
             console.log(`Server is running on port ${PORT}`);
         });

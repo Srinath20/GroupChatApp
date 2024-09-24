@@ -40,14 +40,7 @@ socket.on('newMessage', (msg) => {
     messageList.appendChild(newMessage);
 });
 
-// Handle receiving a new message
-socket.on('newMessage', (msg) => {
-    const messageList = document.getElementById('messages');
-    const newMessage = document.createElement('li');
-    newMessage.textContent = `${msg.User.name}: ${msg.message}`;
-    messageList.appendChild(newMessage);
-});
-
+// Handle when a user joins the chat
 socket.on('userJoined', (msg) => {
     const messageList = document.getElementById('messages');
     const newMessage = document.createElement('li');
@@ -59,5 +52,5 @@ socket.on('userJoined', (msg) => {
 document.getElementById('sendBtn').addEventListener('click', () => {
     const message = document.getElementById('chatInput').value;
     socket.emit('chatMessage', { username, message }); // Send username with message
-    document.getElementById('chatInput').value = '';
+    document.getElementById('chatInput').value = ''; // Clear input after sending
 });

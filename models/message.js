@@ -1,6 +1,5 @@
 const { DataTypes } = require('sequelize');
 const sequelize = require('../util/db');
-const User = require('./user');
 
 const Message = sequelize.define('Message', {
     id: {
@@ -13,14 +12,6 @@ const Message = sequelize.define('Message', {
         type: DataTypes.STRING,
         allowNull: false
     },
-    userId: {
-        type: DataTypes.INTEGER,
-        allowNull: false,
-        references: {
-            model: User,
-            key: 'id'
-        }
-    },
     createdAt: {
         type: DataTypes.DATE,
         allowNull: false,
@@ -28,6 +19,8 @@ const Message = sequelize.define('Message', {
     }
 });
 
-Message.belongsTo(User);
+Message.associate = (models) => {
+    Message.belongsTo(models.User);
+};
 
 module.exports = Message;

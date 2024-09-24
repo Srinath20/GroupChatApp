@@ -26,4 +26,8 @@ const User = sequelize.define('User', {
     }
 });
 
+User.associate = (models) => {
+    User.hasMany(models.Message);
+};
+
 module.exports = User;

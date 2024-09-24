@@ -10,7 +10,7 @@ router.get('/messages', async (req, res) => {
             include: [{ model: User, attributes: ['name'] }],
             order: [['createdAt', 'ASC']]
         });
-        console.log('Fetched messages:', messages); // Add this line for debugging
+        console.log('Fetched messages:', messages);
         res.status(200).json(messages);
     } catch (error) {
         console.error('Error fetching messages:', error);
