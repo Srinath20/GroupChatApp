@@ -1,4 +1,4 @@
-const socket = io(); // Connect to server
+const socket = io(); // Connect to the server
 
 // Get the username from localStorage
 const username = localStorage.getItem('username');
@@ -11,19 +11,28 @@ async function fetchMessages() {
             throw new Error(`HTTP error! status: ${response.status}`);
         }
         const messages = await response.json();
-        console.log('Fetched messages:', messages); // Add this line for debugging
+        console.log('Fetched messages:', messages); // Debugging
 
         const messageList = document.getElementById('messages');
         messageList.innerHTML = ''; // Clear existing messages
 
+        // Sort messages by createdAt
+        messages.sort((a, b) => new Date(a.createdAt) - new Date(b.createdAt));
+
         messages.forEach(msg => {
-            const newMessage = document.createElement('li');
-            newMessage.textContent = `${msg.User.name}: ${msg.message}`;
-            messageList.appendChild(newMessage);
+            appendMessage(msg.User.name, msg.message);
         });
     } catch (error) {
         console.error('Error fetching messages:', error);
     }
+}
+
+// Function to append a message to the chat
+function appendMessage(username, message) {
+    const messageList = document.getElementById('messages');
+    const newMessage = document.createElement('li');
+    newMessage.textContent = `${username}: ${message}`;
+    messageList.appendChild(newMessage);
 }
 
 // Call fetchMessages when the page loads
@@ -34,23 +43,19 @@ document.addEventListener('DOMContentLoaded', () => {
 
 // Handle receiving a new message
 socket.on('newMessage', (msg) => {
-    const messageList = document.getElementById('messages');
-    const newMessage = document.createElement('li');
-    newMessage.textContent = `${msg.User.name}: ${msg.message}`;
-    messageList.appendChild(newMessage);
+    appendMessage(msg.User.name, msg.message);
 });
 
 // Handle when a user joins the chat
 socket.on('userJoined', (msg) => {
-    const messageList = document.getElementById('messages');
-    const newMessage = document.createElement('li');
-    newMessage.textContent = msg;
-    messageList.appendChild(newMessage);
+    appendMessage('System', msg);
 });
 
 // Handle sending a message
 document.getElementById('sendBtn').addEventListener('click', () => {
     const message = document.getElementById('chatInput').value;
-    socket.emit('chatMessage', { username, message }); // Send username with message
-    document.getElementById('chatInput').value = ''; // Clear input after sending
+    if (message.trim()) { // Check if the message is not empty
+        socket.emit('chatMessage', { username, message }); // Send username with message
+        document.getElementById('chatInput').value = ''; // Clear input after sending
+    }
 });

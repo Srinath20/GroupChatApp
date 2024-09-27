@@ -33,11 +33,12 @@ app.use(cors({
     methods: ['GET', 'POST', 'PUT', 'DELETE']
 }));
 
-app.use(express.static(path.join(__dirname, 'views')));
+app.use(express.static(path.join(__dirname, 'views'))); // Serve static files from the views folder
 
 app.get('/', (req, res) => {
     res.sendFile(path.join(__dirname, 'views', 'signup.html'));
 });
+
 app.use('/user', userRoutes);
 app.use('/chat', chatRoutes);
 
@@ -52,17 +53,21 @@ io.on('connection', (socket) => {
     socket.on('chatMessage', async ({ username, message }) => {
         try {
             const user = await User.findOne({ where: { name: username } });
-            const newMessage = await Message.create({
-                message,
-                userId: user.id
-            });
+            if (user) {
+                const newMessage = await Message.create({
+                    message,
+                    UserId: user.id
+                });
 
-            io.emit('newMessage', {
-                id: newMessage.id,
-                message: newMessage.message,
-                User: { name: username },
-                createdAt: newMessage.createdAt
-            });
+                const messageWithUser = await Message.findOne({
+                    where: { id: newMessage.id },
+                    include: [{ model: User, as: 'User', attributes: ['name'] }]
+                });
+                console.log('New message created:', messageWithUser.toJSON()); // debugging
+                io.emit('newMessage', messageWithUser);
+            } else {
+                console.error('User not found for the given username');
+            }
         } catch (error) {
             console.error('Error saving message:', error);
         }
@@ -73,6 +78,7 @@ io.on('connection', (socket) => {
     });
 });
 
+// Sync database and start server
 sequelize.sync({ force: false })
     .then(() => {
         console.log('Database & tables created!');

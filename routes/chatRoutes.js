@@ -7,7 +7,7 @@ const User = require('../models/user');
 router.get('/messages', async (req, res) => {
     try {
         const messages = await Message.findAll({
-            include: [{ model: User, attributes: ['name'] }],
+            include: [{ model: User, as: 'User', attributes: ['name'] }],
             order: [['createdAt', 'ASC']]
         });
         console.log('Fetched messages:', messages);
@@ -31,7 +31,7 @@ router.post('/message', async (req, res) => {
 
         const newMessage = await Message.create({
             message,
-            userId: user.id
+            UserId: user.id // Ensure userId matches your database schema
         });
 
         res.status(201).json(newMessage);

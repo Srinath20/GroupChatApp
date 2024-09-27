@@ -16,11 +16,19 @@ const Message = sequelize.define('Message', {
         type: DataTypes.DATE,
         allowNull: false,
         defaultValue: DataTypes.NOW
+    },
+    UserId: {
+        type: DataTypes.INTEGER,
+        allowNull: false,
+        references: {
+            model: 'Users',
+            key: 'id'
+        }
     }
 });
 
 Message.associate = (models) => {
-    Message.belongsTo(models.User);
+    Message.belongsTo(models.User, { foreignKey: 'UserId', as: 'User' });
 };
 
 module.exports = Message;
