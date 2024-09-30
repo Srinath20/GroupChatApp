@@ -59,3 +59,92 @@ document.getElementById('sendBtn').addEventListener('click', () => {
         document.getElementById('chatInput').value = ''; // Clear input after sending
     }
 });
+
+// Create Group Modal Logic
+document.addEventListener("DOMContentLoaded", () => {
+    const createGroupBtn = document.getElementById("createGroupBtn");
+    const createGroupModal = document.getElementById("createGroupModal");
+    const closeModal = document.querySelector(".close");
+
+    // Show the modal when the "Create Group" button is clicked
+    createGroupBtn.addEventListener("click", () => {
+        createGroupModal.style.display = "block";
+    });
+
+    // Close the modal when the close button (x) is clicked
+    closeModal.addEventListener("click", () => {
+        createGroupModal.style.display = "none";
+    });
+
+    // Close the modal when the user clicks outside of the modal content
+    window.addEventListener("click", (event) => {
+        if (event.target === createGroupModal) {
+            createGroupModal.style.display = "none";
+        }
+    });
+
+    // Logic for adding group members
+    const addMemberBtn = document.getElementById("addMemberBtn");
+    const groupMemberEmail = document.getElementById("groupMemberEmail");
+    const membersList = document.getElementById("membersList");
+
+    let members = []; // Store added members
+
+    addMemberBtn.addEventListener("click", () => {
+        const email = groupMemberEmail.value.trim();
+        if (email && !members.includes(email)) {
+            members.push(email);
+
+            const listItem = document.createElement("li");
+            listItem.textContent = email;
+
+            const removeBtn = document.createElement("button");
+            removeBtn.textContent = "Remove";
+            removeBtn.addEventListener("click", () => {
+                members = members.filter(member => member !== email);
+                membersList.removeChild(listItem);
+            });
+
+            listItem.appendChild(removeBtn);
+            membersList.appendChild(listItem);
+            groupMemberEmail.value = '';
+        }
+    });
+
+    // Handle form submission for creating a group
+    const groupForm = document.getElementById("groupForm");
+
+    groupForm.addEventListener("submit", (e) => {
+        e.preventDefault();
+
+        const groupName = document.getElementById("groupName").value;
+
+        const data = {
+            name: groupName,
+            members: members
+        };
+
+        fetch('/group/create', {
+            method: 'POST',
+            headers: {
+                'Content-Type': 'application/json'
+            },
+            body: JSON.stringify(data)
+        })
+            .then(response => response.json())
+            .then(data => {
+                if (data.success) {
+                    alert('Group created successfully!');
+                    createGroupModal.style.display = "none"; // Hide modal after submission
+                    groupForm.reset(); // Clear the form
+                    members = []; // Clear the members array
+                    membersList.innerHTML = ''; // Clear the list
+                } else {
+                    alert('Error creating group: ' + data.message);
+                }
+            })
+            .catch(error => {
+                console.error('Error:', error);
+            });
+    });
+});

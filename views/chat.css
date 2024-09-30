@@ -1,3 +1,54 @@
+/* Container to hold both the left sidebar and chat section */
+#container {
+    display: flex;
+    width: 100%;
+    height: 100vh;
+}
+
+/* Left Sidebar styling */
+#leftSidebar {
+    width: 20%;
+    background-color: #f1f1f1;
+    padding: 20px;
+    box-shadow: 2px 0 5px rgba(0, 0, 0, 0.1);
+}
+
+#leftSidebar button {
+    width: 100%;
+    padding: 10px;
+    margin-bottom: 20px;
+    background-color: #4CAF50;
+    color: white;
+    border: none;
+    cursor: pointer;
+}
+
+#leftSidebar button:hover {
+    background-color: #45a049;
+}
+
+#leftSidebar h3 {
+    margin-bottom: 10px;
+}
+
+#groupList {
+    list-style-type: none;
+    padding: 0;
+}
+
+#groupList li {
+    padding: 10px;
+    margin-bottom: 10px;
+    background-color: #ddd;
+    border-radius: 5px;
+}
+
+/* Chat Room Section */
+#chatSection {
+    width: 80%;
+    padding: 20px;
+}
+
 #chatWindow {
     width: 100%;
     height: 400px;
@@ -30,4 +81,45 @@ h2 {
 
 #sendBtn {
     padding: 10px;
+}
+
+.modal {
+    display: none;
+    /* Hidden by default */
+    position: fixed;
+    /* Stay in place */
+    z-index: 1;
+    /* Sit on top */
+    left: 0;
+    top: 0;
+    width: 100%;
+    /* Full width */
+    height: 100%;
+    /* Full height */
+    background-color: rgba(0, 0, 0, 0.4);
+    /* Black background with opacity */
+}
+
+.modal-content {
+    background-color: white;
+    margin: 10% auto;
+    /* 10% from the top and centered */
+    padding: 20px;
+    border: 1px solid #888;
+    width: 80%;
+    /* Could be more or less, depending on screen size */
+}
+
+.close {
+    color: #aaa;
+    float: right;
+    font-size: 28px;
+    font-weight: bold;
+}
+
+.close:hover,
+.close:focus {
+    color: black;
+    text-decoration: none;
+    cursor: pointer;
 }

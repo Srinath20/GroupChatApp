@@ -9,10 +9,44 @@
 </head>
 
 <body>
-    <h2>Chat Room</h2>
-    <ul id="messages"></ul>
-    <input type="text" id="chatInput" placeholder="Type your message..." autocomplete="off">
-    <button id="sendBtn">Send</button>
+    <div id="container">
+        <!-- Left Sidebar for Groups -->
+        <div id="leftSidebar">
+            <button id="createGroupBtn">Create Group</button>
+            <h3><strong>Your Groups</strong></h3>
+            <ul id="groupList">
+                <!-- The user's groups will be displayed here later -->
+            </ul>
+        </div>
+
+        <!-- Chat Room Section -->
+        <div id="chatSection">
+            <h2>Chat Room</h2>
+            <ul id="messages"></ul>
+            <input type="text" id="chatInput" placeholder="Type your message..." autocomplete="off">
+            <button id="sendBtn">Send</button>
+        </div>
+    </div>
+
+    <!-- Modal for Create Group Form -->
+    <div id="createGroupModal" class="modal">
+        <div class="modal-content">
+            <span class="close">&times;</span>
+            <h2>Create New Group</h2>
+            <form id="groupForm">
+                <label for="groupName">Name:</label><br>
+                <input type="text" id="groupName" name="groupName" required><br><br>
+
+                <label for="groupMembers">Add members (email addresses):</label><br>
+                <input type="email" id="groupMemberEmail" placeholder="Enter email" autocomplete="off">
+                <button type="button" id="addMemberBtn">Add Member</button><br><br>
+
+                <ul id="membersList"></ul> <!-- Display added members -->
+
+                <button type="submit" id="submitGroupBtn">Create Group</button>
+            </form>
+        </div>
+    </div>
 
     <script src="/socket.io/socket.io.js"></script>
     <script src="./chat.js"></script>
