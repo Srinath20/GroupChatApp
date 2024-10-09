@@ -7,10 +7,10 @@ const User = require('../models/user');
 router.get('/messages', async (req, res) => {
     try {
         const messages = await Message.findAll({
+            where: { groupId: null },
             include: [{ model: User, as: 'User', attributes: ['name'] }],
             order: [['createdAt', 'ASC']]
         });
-        console.log('Fetched messages:', messages);
         res.status(200).json(messages);
     } catch (error) {
         console.error('Error fetching messages:', error);

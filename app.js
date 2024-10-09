@@ -3,12 +3,15 @@ const path = require('path');
 const sequelize = require('./util/db');
 const userRoutes = require('./routes/userRoutes');
 const chatRoutes = require('./routes/chatRoutes');
+const groupRoutes = require('./routes/groupRoutes');
 const cors = require('cors');
 const dotenv = require('dotenv');
 const http = require('http');
 const { Server } = require('socket.io');
 const User = require('./models/user');
+const Group = require('./models/Group');
 const Message = require('./models/message');
+const UserGroups = require('./models/userGroups');
 
 dotenv.config();
 
@@ -19,7 +22,12 @@ const io = new Server(server);
 const PORT = 3000;
 
 // Set up associations
-const models = { User, Message };
+const models = {
+    User,
+    Group,
+    Message,
+    UserGroups
+};
 Object.keys(models).forEach(modelName => {
     if ('associate' in models[modelName]) {
         models[modelName].associate(models);
@@ -41,6 +49,7 @@ app.get('/', (req, res) => {
 
 app.use('/user', userRoutes);
 app.use('/chat', chatRoutes);
+app.use('/group', groupRoutes);
 
 io.on('connection', (socket) => {
     console.log('A user connected');
@@ -89,3 +98,4 @@ sequelize.sync({ force: false })
     .catch(err => {
         console.error('Error syncing database:', err);
     });
+

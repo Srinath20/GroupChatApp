@@ -1,3 +1,4 @@
+
 const socket = io(); // Connect to the server
 
 // Get the username from localStorage
@@ -85,29 +86,29 @@ document.addEventListener("DOMContentLoaded", () => {
 
     // Logic for adding group members
     const addMemberBtn = document.getElementById("addMemberBtn");
-    const groupMemberEmail = document.getElementById("groupMemberEmail");
+    const groupMemberMobile = document.getElementById("groupMemberMobile");
     const membersList = document.getElementById("membersList");
 
     let members = []; // Store added members
 
     addMemberBtn.addEventListener("click", () => {
-        const email = groupMemberEmail.value.trim();
-        if (email && !members.includes(email)) {
-            members.push(email);
+        const mobile = groupMemberMobile.value.trim();
+        if (mobile && !members.includes(mobile)) {
+            members.push(mobile);
 
             const listItem = document.createElement("li");
-            listItem.textContent = email;
+            listItem.textContent = mobile;
 
             const removeBtn = document.createElement("button");
-            removeBtn.textContent = "Remove";
+            removeBtn.textContent = "X";
             removeBtn.addEventListener("click", () => {
-                members = members.filter(member => member !== email);
+                members = members.filter(member => member !== mobile);
                 membersList.removeChild(listItem);
             });
 
             listItem.appendChild(removeBtn);
             membersList.appendChild(listItem);
-            groupMemberEmail.value = '';
+            groupMemberMobile.value = '';
         }
     });
 
@@ -119,15 +120,36 @@ document.addEventListener("DOMContentLoaded", () => {
 
         const groupName = document.getElementById("groupName").value;
 
+        if (!groupName || members.length === 0) {
+            alert('Please enter a group name and add at least one member.');
+            return;
+        }
+        function getCookie(name) {
+            const value = `; ${document.cookie}`;
+            const parts = value.split(`; ${name}=`);
+            if (parts.length === 2) return parts.pop().split(';').shift();
+            return null;
+        }
+
+        const token = getCookie('token');
         const data = {
             name: groupName,
             members: members
         };
+        alert(data);
+        alert('Group created successfully!');
+        createGroupModal.style.display = "none";
+        groupForm.reset();
+        members = [];
+        membersList.innerHTML = '';
 
+        // Uncomment the following code when you're ready to send data to the server
+        /*
         fetch('/group/create', {
             method: 'POST',
             headers: {
-                'Content-Type': 'application/json'
+                'Content-Type': 'application/json',
+                'Authorization': `Bearer ${token}`
             },
             body: JSON.stringify(data)
         })
@@ -146,5 +168,6 @@ document.addEventListener("DOMContentLoaded", () => {
             .catch(error => {
                 console.error('Error:', error);
             });
+        */
     });
 });

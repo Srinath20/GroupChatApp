@@ -11,16 +11,22 @@ const Group = sequelize.define('Group', {
         type: DataTypes.STRING,
         allowNull: false
     },
-    createdAt: {
-        type: DataTypes.DATE,
+    createdBy: {
+        type: DataTypes.INTEGER,
         allowNull: false,
-        defaultValue: DataTypes.NOW
+        references: {
+            model: 'Users',
+            key: 'id'
+        }
     }
+}, {
+    tableName: 'Groups'
 });
 
 Group.associate = (models) => {
-    Group.belongsToMany(models.User, { through: models.GroupMember, foreignKey: 'GroupId' });
-    Group.hasMany(models.Message, { foreignKey: 'GroupId', as: 'Messages' });
+    Group.belongsTo(models.User, { foreignKey: 'createdBy', as: 'Creator' });
+    Group.belongsToMany(models.User, { through: 'UserGroups', as: 'Members' });
+    Group.hasMany(models.Message, { foreignKey: 'groupId', as: 'Messages' });
 };
 
 module.exports = Group;

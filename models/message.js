@@ -5,17 +5,11 @@ const Message = sequelize.define('Message', {
     id: {
         type: DataTypes.INTEGER,
         autoIncrement: true,
-        allowNull: false,
         primaryKey: true
     },
     message: {
         type: DataTypes.STRING,
         allowNull: false
-    },
-    createdAt: {
-        type: DataTypes.DATE,
-        allowNull: false,
-        defaultValue: DataTypes.NOW
     },
     UserId: {
         type: DataTypes.INTEGER,
@@ -23,12 +17,27 @@ const Message = sequelize.define('Message', {
         references: {
             model: 'Users',
             key: 'id'
-        }
+        },
+        onDelete: 'CASCADE',
+        onUpdate: 'CASCADE'
+    },
+    groupId: {
+        type: DataTypes.INTEGER,
+        allowNull: true,
+        references: {
+            model: 'Groups',
+            key: 'id'
+        },
+        onDelete: 'CASCADE',
+        onUpdate: 'CASCADE'
     }
+}, {
+    tableName: 'Messages'
 });
 
 Message.associate = (models) => {
     Message.belongsTo(models.User, { foreignKey: 'UserId', as: 'User' });
+    Message.belongsTo(models.Group, { foreignKey: 'groupId', as: 'Group' });
 };
 
 module.exports = Message;
