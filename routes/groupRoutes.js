@@ -64,6 +64,36 @@ router.post('/create', async (req, res) => {
     }
 });
 
+const verifyToken = (req, res, next) => {
+    const token = req.headers['authorization']?.split(' ')[1];
+    if (!token) return res.status(403).json({ success: false, message: 'No token provided.' });
 
+    jwt.verify(token, process.env.TOKEN_SECRET, (err, decoded) => {
+        if (err) return res.status(500).json({ success: false, message: 'Failed to authenticate token.' });
+        req.userId = decoded.id;
+        next();
+    });
+};
+
+router.get('/user-groups', verifyToken, async (req, res) => {
+    try {
+        const user = await User.findByPk(req.userId, {
+            include: [{
+                model: Group,
+                as: 'Groups',
+                through: { attributes: [] }
+            }]
+        });
+
+        if (!user) {
+            return res.status(404).json({ success: false, message: 'User not found.' });
+        }
+
+        res.json({ success: true, groups: user.Groups });
+    } catch (error) {
+        console.error('Error fetching user groups:', error);
+        res.status(500).json({ success: false, message: 'An error occurred while fetching user groups.' });
+    }
+});
 
 module.exports = router;

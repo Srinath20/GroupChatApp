@@ -20,4 +20,9 @@ const UserGroups = sequelize.define('UserGroups', {
     tableName: 'UserGroups'
 });
 
+UserGroups.associate = (models) => {
+    UserGroups.belongsTo(models.User, { foreignKey: 'UserId' });
+    UserGroups.belongsTo(models.Group, { foreignKey: 'GroupId' });
+};
+
 module.exports = UserGroups;

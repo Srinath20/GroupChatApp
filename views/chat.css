@@ -123,3 +123,19 @@ h2 {
     text-decoration: none;
     cursor: pointer;
 }
+
+.group-button {
+    display: block;
+    width: 100%;
+    padding: 10px;
+    margin-bottom: 5px;
+    background-color: #f0f0f0;
+    border: none;
+    border-radius: 5px;
+    cursor: pointer;
+    text-align: left;
+}
+
+.group-button:hover {
+    background-color: #e0e0e0;
+}

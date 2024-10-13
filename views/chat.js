@@ -1,10 +1,52 @@
 
-const socket = io(); // Connect to the server
-
-// Get the username from localStorage
+const socket = io();
 const username = localStorage.getItem('username');
+const groupList = document.getElementById('groupList');
 
-// Fetch and display all messages
+function getCookie(name) {
+    const value = `; ${document.cookie}`;
+    const parts = value.split(`; ${name}=`);
+    if (parts.length === 2) return parts.pop().split(';').shift();
+    return null;
+}
+
+function fetchUserGroups() {
+    const token = getCookie('token');
+    fetch('/group/user-groups', {
+        method: 'GET',
+        headers: {
+            'Authorization': `Bearer ${token}`
+        }
+    })
+        .then(response => response.json())
+        .then(data => {
+            if (data.success) {
+                displayGroups(data.groups);
+            } else {
+                console.error('Error fetching groups:', data.message);
+            }
+        })
+        .catch(error => {
+            console.error('Error:', error);
+        });
+}
+
+function displayGroups(groups) {
+    groupList.innerHTML = '';
+    groups.forEach(group => {
+        const button = document.createElement('button');
+        button.textContent = group.name;
+        button.classList.add('group-button');
+        button.addEventListener('click', () => selectGroup(group.id));
+        groupList.appendChild(button);
+    });
+}
+
+function selectGroup(groupId) {
+    console.log('Selected group:', groupId);
+}
+
+
 async function fetchMessages() {
     try {
         const response = await fetch('/chat/messages');
@@ -173,3 +215,5 @@ document.addEventListener("DOMContentLoaded", () => {
             });
     });
 });
+
+document.addEventListener('DOMContentLoaded', fetchUserGroups);
