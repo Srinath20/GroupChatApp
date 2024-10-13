@@ -136,15 +136,10 @@ document.addEventListener("DOMContentLoaded", () => {
             name: groupName,
             members: members
         };
-        alert(data);
-        alert('Group created successfully!');
         createGroupModal.style.display = "none";
         groupForm.reset();
         members = [];
         membersList.innerHTML = '';
-
-        // Uncomment the following code when you're ready to send data to the server
-        /*
         fetch('/group/create', {
             method: 'POST',
             headers: {
@@ -155,19 +150,26 @@ document.addEventListener("DOMContentLoaded", () => {
         })
             .then(response => response.json())
             .then(data => {
-                if (data.success) {
-                    alert('Group created successfully!');
-                    createGroupModal.style.display = "none"; // Hide modal after submission
-                    groupForm.reset(); // Clear the form
-                    members = []; // Clear the members array
-                    membersList.innerHTML = ''; // Clear the list
+                if (data.group) {
+                    alert(`Group "${data.group.name}" created successfully!\nValid numbers: ${data.validNumbers.join(', ')}`);
+                    createGroupModal.style.display = "none";
+                    groupForm.reset();
+                    members = [];
+                    membersList.innerHTML = '';
                 } else {
-                    alert('Error creating group: ' + data.message);
+                    let message = 'Error creating group: ' + data.message;
+                    if (data.missingNumbers && data.missingNumbers.length > 0) {
+                        message += `\nMissing numbers: ${data.missingNumbers.join(', ')}`;
+                    }
+                    if (data.validNumbers && data.validNumbers.length > 0) {
+                        message += `\nValid numbers: ${data.validNumbers.join(', ')}`;
+                    }
+                    alert(message);
                 }
             })
             .catch(error => {
                 console.error('Error:', error);
+                alert('An error occurred while creating the group.');
             });
-        */
     });
 });

@@ -3,6 +3,7 @@ const router = express.Router();
 const User = require('../models/user');
 const Message = require('../models/message');
 const Group = require('../models/Group');
+const UserGroups = require('../models/userGroups');
 const jwt = require('jsonwebtoken');
 
 router.post('/create', async (req, res) => {
@@ -11,22 +12,19 @@ router.post('/create', async (req, res) => {
         if (!token) {
             return res.status(401).json({ message: 'Authentication token required' });
         }
-
-        // Decode the token to get the user ID of the creator
         const decoded = jwt.verify(token, process.env.TOKEN_SECRET);
         const creatorId = decoded.id;
 
         const { name, members } = req.body;
 
-        // Split the phone numbers into an array
-        const phoneNumbers = members.split(',');
+        if (!Array.isArray(members)) {
+            return res.status(400).json({ message: 'Members should be an array of phone numbers' });
+        }
 
-        // To store existing and non-existing users
         const existingUsers = [];
         const missingUsers = [];
 
-        // Loop through each phone number and check if the user exists
-        for (let phone of phoneNumbers) {
+        for (let phone of members) {
             const user = await User.findOne({ where: { phone: phone.trim() } });
             if (user) {
                 existingUsers.push(user);
@@ -34,19 +32,38 @@ router.post('/create', async (req, res) => {
                 missingUsers.push(phone);
             }
         }
-        // If there are any missing users, inform the client
         if (missingUsers.length > 0) {
             return res.status(400).json({
-                message: `The following phone numbers do not exist: ${missingUsers.join(', ')}`
+                message: `The following phone numbers do not exist: ${missingUsers.join(', ')}`,
+                missingNumbers: missingUsers,
+                validNumbers: existingUsers.map(user => user.phone)
             });
         }
+        const newGroup = await Group.create({
+            name: name,
+            createdBy: creatorId
+        });
+        const userGroupsData = existingUsers.map(user => ({
+            UserId: user.id,
+            GroupId: newGroup.id
+        }));
+        userGroupsData.push({
+            UserId: creatorId,
+            GroupId: newGroup.id
+        });
+        await UserGroups.bulkCreate(userGroupsData);
 
-
+        return res.status(201).json({
+            message: 'Group created successfully!',
+            group: newGroup,
+            validNumbers: existingUsers.map(user => user.phone)
+        });
+    } catch (error) {
+        console.error('Error creating group:', error);
+        return res.status(500).json({ message: 'Server error' });
     }
-    catch {
+});
 
-    }
-})
 
 
 module.exports = router;
