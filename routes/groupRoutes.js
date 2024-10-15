@@ -6,6 +6,7 @@ const Group = require('../models/Group');
 const UserGroups = require('../models/userGroups');
 const jwt = require('jsonwebtoken');
 
+
 router.post('/create', async (req, res) => {
     try {
         const token = req.headers.authorization?.split(' ')[1];
@@ -74,6 +75,33 @@ const verifyToken = (req, res, next) => {
         next();
     });
 };
+
+router.get('/:groupId/messages', verifyToken, async (req, res) => {
+    try {
+        const groupId = req.params.groupId;
+        const userId = req.userId;
+
+        // Check if the user is a member of the group
+        const userGroup = await UserGroups.findOne({
+            where: { UserId: userId, GroupId: groupId }
+        });
+
+        if (!userGroup) {
+            return res.status(403).json({ success: false, message: 'You are not a member of this group.' });
+        }
+
+        const messages = await Message.findAll({
+            where: { groupId: groupId },
+            include: [{ model: User, as: 'User', attributes: ['name'] }],
+            order: [['createdAt', 'ASC']]
+        });
+
+        res.json({ success: true, messages: messages });
+    } catch (error) {
+        console.error('Error fetching group messages:', error);
+        res.status(500).json({ success: false, message: 'An error occurred while fetching group messages.' });
+    }
+});
 
 router.get('/user-groups', verifyToken, async (req, res) => {
     try {

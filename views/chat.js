@@ -2,6 +2,7 @@
 const socket = io();
 const username = localStorage.getItem('username');
 const groupList = document.getElementById('groupList');
+let currentGroupId = null;
 
 function getCookie(name) {
     const value = `; ${document.cookie}`;
@@ -43,9 +44,139 @@ function displayGroups(groups) {
 }
 
 function selectGroup(groupId) {
-    console.log('Selected group:', groupId);
+    currentGroupId = groupId;
+    socket.emit('joinGroup', groupId);
+    fetchGroupMessages(groupId);
 }
 
+async function fetchGroupMessages(groupId) {
+    try {
+        const token = getCookie('token');
+        const response = await fetch(`/group/${groupId}/messages`, {
+            method: 'GET',
+            headers: {
+                'Authorization': `Bearer ${token}`
+            }
+        });
+        if (!response.ok) {
+            throw new Error(`HTTP error! status: ${response.status}`);
+        }
+        const data = await response.json();
+        if (data.success && Array.isArray(data.messages)) {
+            displayMessages(data.messages);
+        } else {
+            console.error('Unexpected response structure:', data);
+            throw new Error('Unexpected response structure');
+        }
+    } catch (error) {
+        console.error('Error fetching group messages:', error);
+        displayErrorMessage('Failed to load group messages. Please try again.');
+    }
+}
+
+function displayMessages(messages) {
+    const messageList = document.getElementById('messages');
+    messageList.innerHTML = ''; // Clear existing messages
+
+    if (messages.length === 0) {
+        const emptyMessage = document.createElement('li');
+        emptyMessage.textContent = 'No messages in this group yet.';
+        messageList.appendChild(emptyMessage);
+    } else {
+        messages.forEach(msg => {
+            appendMessage(msg.User.name, msg.message);
+        });
+    }
+}
+
+function appendMessage(username, message, isSystemMessage = false) {
+    const messageList = document.getElementById('messages');
+    const newMessage = document.createElement('li');
+    newMessage.textContent = isSystemMessage ? message : `${username}: ${message}`;
+    if (isSystemMessage) {
+        newMessage.classList.add('system-message');
+    }
+    messageList.appendChild(newMessage);
+    messageList.scrollTop = messageList.scrollHeight;
+}
+
+
+document.removeEventListener('DOMContentLoaded', fetchMessages);
+document.removeEventListener('DOMContentLoaded', () => {
+    socket.emit('joinChat', username);
+});
+
+document.addEventListener('DOMContentLoaded', () => {
+    fetchUserGroups();
+    socket.emit('joinChat', username);
+});
+
+socket.off('newMessage');
+socket.off('userJoined');
+
+socket.on('newMessage', (msg) => {
+    if (currentGroupId === null || msg.groupId === currentGroupId) {
+        appendMessage(msg.User.name, msg.message);
+    }
+});
+
+socket.on('userJoined', (msg) => {
+    appendMessage('System', msg, true);
+});
+
+
+function sendMessage() {
+    const messageInput = document.getElementById('chatInput');
+    const message = messageInput.value.trim();
+    if (message) {
+        if (currentGroupId) {
+            socket.emit('groupMessage', { username, message, groupId: currentGroupId });
+        } else {
+            socket.emit('chatMessage', { username, message });
+        }
+        appendMessage(username, message); // Immediately append the user's own message
+        messageInput.value = '';
+    }
+}
+
+document.getElementById('sendBtn').addEventListener('click', sendMessage);
+document.getElementById('chatInput').addEventListener('keypress', (e) => {
+    if (e.key === 'Enter') {
+        sendMessage();
+    }
+});
+
+function displayErrorMessage(message) {
+    const messageList = document.getElementById('messages');
+    messageList.innerHTML = ''; // Clear existing messages
+    const errorMessage = document.createElement('li');
+    errorMessage.textContent = message;
+    errorMessage.style.color = 'red';
+    messageList.appendChild(errorMessage);
+}
+
+document.addEventListener('DOMContentLoaded', () => {
+    fetchUserGroups();
+    socket.emit('joinChat', username);
+});
+
+socket.on('newMessage', (msg) => {
+    if (msg.groupId === currentGroupId) {
+        appendMessage(msg.User.name, msg.message);
+    }
+});
+
+socket.on('userJoined', (msg) => {
+    appendMessage('System', msg);
+});
+
+document.getElementById('sendBtn').addEventListener('click', () => {
+    const message = document.getElementById('chatInput').value;
+    if (message.trim() && currentGroupId) {
+        socket.emit('groupMessage', { username, message, groupId: currentGroupId });
+        document.getElementById('chatInput').value = '';
+    }
+});
 
 async function fetchMessages() {
     try {
@@ -70,13 +201,7 @@ async function fetchMessages() {
     }
 }
 
-// Function to append a message to the chat
-function appendMessage(username, message) {
-    const messageList = document.getElementById('messages');
-    const newMessage = document.createElement('li');
-    newMessage.textContent = `${username}: ${message}`;
-    messageList.appendChild(newMessage);
-}
+
 
 // Call fetchMessages when the page loads
 document.addEventListener('DOMContentLoaded', () => {

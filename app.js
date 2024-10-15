@@ -56,7 +56,36 @@ io.on('connection', (socket) => {
 
     socket.on('joinChat', (username) => {
         socket.username = username;
-        io.emit('userJoined', `${username} joined the chat`);
+        socket.broadcast.emit('userJoined', `${username} joined the chat`);
+    });
+
+    socket.on('joinGroup', (groupId) => {
+        socket.join(`group_${groupId}`);
+    });
+
+    socket.on('groupMessage', async ({ username, message, groupId }) => {
+        try {
+            const user = await User.findOne({ where: { name: username } });
+            if (user) {
+                const newMessage = await Message.create({
+                    message,
+                    UserId: user.id,
+                    groupId: groupId
+                });
+
+                const messageWithUser = await Message.findOne({
+                    where: { id: newMessage.id },
+                    include: [{ model: User, as: 'User', attributes: ['name'] }]
+                });
+
+                // Broadcast to all clients in the group except the sender
+                socket.to(`group_${groupId}`).emit('newMessage', messageWithUser);
+            } else {
+                console.error('User not found for the given username');
+            }
+        } catch (error) {
+            console.error('Error saving group message:', error);
+        }
     });
 
     socket.on('chatMessage', async ({ username, message }) => {
@@ -72,8 +101,8 @@ io.on('connection', (socket) => {
                     where: { id: newMessage.id },
                     include: [{ model: User, as: 'User', attributes: ['name'] }]
                 });
-                console.log('New message created:', messageWithUser.toJSON()); // debugging
-                io.emit('newMessage', messageWithUser);
+                // Broadcast to all clients except the sender
+                socket.broadcast.emit('newMessage', messageWithUser);
             } else {
                 console.error('User not found for the given username');
             }
