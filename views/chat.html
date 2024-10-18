@@ -6,6 +6,22 @@
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
     <title>Chat Application</title>
     <link rel="stylesheet" href="./chat.css">
+    <style>
+        #groupManagement {
+            margin-top: 20px;
+            padding: 10px;
+            border: 1px solid #ccc;
+            display: none;
+        }
+
+        #groupManagement h3 {
+            margin-top: 0;
+        }
+
+        #groupManagement div {
+            margin-bottom: 10px;
+        }
+    </style>
 </head>
 
 <body>
@@ -15,7 +31,7 @@
             <button id="createGroupBtn">Create Group</button>
             <h3><strong>Your Groups</strong></h3>
             <ul id="groupList">
-                <!-- The user's groups will be displayed here later -->
+                <!-- The user's groups will be displayed here -->
             </ul>
         </div>
 
@@ -25,6 +41,26 @@
             <ul id="messages"></ul>
             <input type="text" id="chatInput" placeholder="Type your message..." autocomplete="off">
             <button id="sendBtn">Send</button>
+        </div>
+
+        <!-- Group Management Section -->
+        <div id="groupManagement">
+            <h3>Group Management</h3>
+            <div>
+                <h4>Add User to Group</h4>
+                <input type="tel" id="addUserPhone" placeholder="Enter user's phone number">
+                <button onclick="addUserToGroup()">Add User</button>
+            </div>
+            <div>
+                <h4>Make User Admin</h4>
+                <input type="tel" id="makeAdminUser" placeholder="Enter user phone number">
+                <button onclick="makeUserAdmin()">Make Admin</button>
+            </div>
+            <div>
+                <h4>Remove User from Group</h4>
+                <input type="text" id="removeUserId" placeholder="Enter user phone number">
+                <button onclick="removeUserFromGroup()">Remove User</button>
+            </div>
         </div>
     </div>
 

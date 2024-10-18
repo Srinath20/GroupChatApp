@@ -15,6 +15,10 @@ const UserGroups = sequelize.define('UserGroups', {
             model: 'Groups',
             key: 'id'
         }
+    },
+    isAdmin: {
+        type: DataTypes.BOOLEAN,
+        defaultValue: false
     }
 }, {
     tableName: 'UserGroups'

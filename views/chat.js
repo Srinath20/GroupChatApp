@@ -1,4 +1,3 @@
-
 const socket = io();
 const username = localStorage.getItem('username');
 const groupList = document.getElementById('groupList');
@@ -47,6 +46,7 @@ function selectGroup(groupId) {
     currentGroupId = groupId;
     socket.emit('joinGroup', groupId);
     fetchGroupMessages(groupId);
+    document.getElementById('groupManagement').style.display = 'block';
 }
 
 async function fetchGroupMessages(groupId) {
@@ -100,51 +100,124 @@ function appendMessage(username, message, isSystemMessage = false) {
     messageList.scrollTop = messageList.scrollHeight;
 }
 
-
-document.removeEventListener('DOMContentLoaded', fetchMessages);
-document.removeEventListener('DOMContentLoaded', () => {
-    socket.emit('joinChat', username);
-});
-
-document.addEventListener('DOMContentLoaded', () => {
-    fetchUserGroups();
-    socket.emit('joinChat', username);
-});
-
-socket.off('newMessage');
-socket.off('userJoined');
-
-socket.on('newMessage', (msg) => {
-    if (currentGroupId === null || msg.groupId === currentGroupId) {
-        appendMessage(msg.User.name, msg.message);
-    }
-});
-
-socket.on('userJoined', (msg) => {
-    appendMessage('System', msg, true);
-});
-
-
 function sendMessage() {
     const messageInput = document.getElementById('chatInput');
     const message = messageInput.value.trim();
-    if (message) {
-        if (currentGroupId) {
-            socket.emit('groupMessage', { username, message, groupId: currentGroupId });
-        } else {
-            socket.emit('chatMessage', { username, message });
-        }
+    if (message && currentGroupId) {
+        socket.emit('groupMessage', { username, message, groupId: currentGroupId });
         appendMessage(username, message); // Immediately append the user's own message
         messageInput.value = '';
     }
 }
 
-document.getElementById('sendBtn').addEventListener('click', sendMessage);
-document.getElementById('chatInput').addEventListener('keypress', (e) => {
-    if (e.key === 'Enter') {
-        sendMessage();
+function addUserToGroup() {
+    const addUserInput = document.getElementById('addUserPhone');
+    const userPhone = addUserInput.value.trim();
+    if (!userPhone) {
+        alert('Please enter a valid phone number.');
+        return;
     }
-});
+    const token = getCookie('token');
+    fetch(`/group/${currentGroupId}/add-user`, {
+        method: 'POST',
+        headers: {
+            'Content-Type': 'application/json',
+            'Authorization': `Bearer ${token}`
+        },
+        body: JSON.stringify({ userPhone })
+    })
+        .then(response => response.json())
+        .then(data => {
+            if (data.success) {
+                alert('User added to the group successfully.');
+                addUserInput.value = ''; // Clear the input field
+            } else {
+                alert(data.message);
+            }
+        })
+        .catch(error => {
+            console.error('Error:', error);
+            alert('An error occurred while adding the user to the group.');
+        });
+}
+
+function makeUserAdmin() {
+    const makeAdminInput = document.getElementById('makeAdminUser');
+    if (!makeAdminInput) {
+        console.error('makeAdminUser input not found');
+        alert('An error occurred. Please try again later.');
+        return;
+    }
+
+    const userPhone = makeAdminInput.value.trim();
+    if (!userPhone) {
+        alert('Please enter a valid phone number.');
+        return;
+    }
+
+    const token = getCookie('token');
+    fetch(`/group/${currentGroupId}/make-admin`, {
+        method: 'PUT',
+        headers: {
+            'Content-Type': 'application/json',
+            'Authorization': `Bearer ${token}`
+        },
+        body: JSON.stringify({ userPhone })
+    })
+        .then(response => {
+            if (!response.ok) {
+                return response.json().then(err => {
+                    throw new Error(err.message || 'Server error');
+                });
+            }
+            return response.json();
+        })
+        .then(data => {
+            if (data.success) {
+                alert('User is now an admin of the group.');
+                console.log(data.message);
+                makeAdminInput.value = ''; // Clear the input field
+            } else {
+                alert(data.message || 'Failed to make user an admin.');
+                console.log(data.message);
+            }
+        })
+        .catch(error => {
+            console.error('Error:', error);
+            alert(`An error occurred: ${error.message}`);
+        });
+}
+
+function removeUserFromGroup() {
+    const removeUserInput = document.getElementById('removeUserId');
+    const userPhone = removeUserInput.value.trim();
+    if (!userPhone) {
+        alert('Please enter a valid phone number.');
+        return;
+    }
+    const token = getCookie('token');
+    fetch(`/group/${currentGroupId}/remove-user`, {
+        method: 'DELETE',
+        headers: {
+            'Content-Type': 'application/json',
+            'Authorization': `Bearer ${token}`
+        },
+        body: JSON.stringify({ userPhone })
+    })
+        .then(response => response.json())
+        .then(data => {
+            if (data.success) {
+                alert('User removed from the group successfully.');
+                removeUserInput.value = ''; // Clear the input field
+            } else {
+                alert(data.message);
+            }
+        })
+        .catch(error => {
+            console.error('Error:', error);
+            alert('An error occurred while removing the user from the group.');
+        });
+}
 
 function displayErrorMessage(message) {
     const messageList = document.getElementById('messages');
@@ -167,64 +240,13 @@ socket.on('newMessage', (msg) => {
 });
 
 socket.on('userJoined', (msg) => {
-    appendMessage('System', msg);
+    appendMessage('System', msg, true);
 });
 
-document.getElementById('sendBtn').addEventListener('click', () => {
-    const message = document.getElementById('chatInput').value;
-    if (message.trim() && currentGroupId) {
-        socket.emit('groupMessage', { username, message, groupId: currentGroupId });
-        document.getElementById('chatInput').value = '';
-    }
-});
-
-async function fetchMessages() {
-    try {
-        const response = await fetch('/chat/messages');
-        if (!response.ok) {
-            throw new Error(`HTTP error! status: ${response.status}`);
-        }
-        const messages = await response.json();
-        console.log('Fetched messages:', messages); // Debugging
-
-        const messageList = document.getElementById('messages');
-        messageList.innerHTML = ''; // Clear existing messages
-
-        // Sort messages by createdAt
-        messages.sort((a, b) => new Date(a.createdAt) - new Date(b.createdAt));
-
-        messages.forEach(msg => {
-            appendMessage(msg.User.name, msg.message);
-        });
-    } catch (error) {
-        console.error('Error fetching messages:', error);
-    }
-}
-
-
-
-// Call fetchMessages when the page loads
-document.addEventListener('DOMContentLoaded', () => {
-    fetchMessages();
-    socket.emit('joinChat', username); // Emit join event after fetching messages
-});
-
-// Handle receiving a new message
-socket.on('newMessage', (msg) => {
-    appendMessage(msg.User.name, msg.message);
-});
-
-// Handle when a user joins the chat
-socket.on('userJoined', (msg) => {
-    appendMessage('System', msg);
-});
-
-// Handle sending a message
-document.getElementById('sendBtn').addEventListener('click', () => {
-    const message = document.getElementById('chatInput').value;
-    if (message.trim()) { // Check if the message is not empty
-        socket.emit('chatMessage', { username, message }); // Send username with message
-        document.getElementById('chatInput').value = ''; // Clear input after sending
+document.getElementById('sendBtn').addEventListener('click', sendMessage);
+document.getElementById('chatInput').addEventListener('keypress', (e) => {
+    if (e.key === 'Enter') {
+        sendMessage();
     }
 });
 
@@ -234,24 +256,20 @@ document.addEventListener("DOMContentLoaded", () => {
     const createGroupModal = document.getElementById("createGroupModal");
     const closeModal = document.querySelector(".close");
 
-    // Show the modal when the "Create Group" button is clicked
     createGroupBtn.addEventListener("click", () => {
         createGroupModal.style.display = "block";
     });
 
-    // Close the modal when the close button (x) is clicked
     closeModal.addEventListener("click", () => {
         createGroupModal.style.display = "none";
     });
 
-    // Close the modal when the user clicks outside of the modal content
     window.addEventListener("click", (event) => {
         if (event.target === createGroupModal) {
             createGroupModal.style.display = "none";
         }
     });
 
-    // Logic for adding group members
     const addMemberBtn = document.getElementById("addMemberBtn");
     const groupMemberMobile = document.getElementById("groupMemberMobile");
     const membersList = document.getElementById("membersList");
@@ -279,7 +297,6 @@ document.addEventListener("DOMContentLoaded", () => {
         }
     });
 
-    // Handle form submission for creating a group
     const groupForm = document.getElementById("groupForm");
 
     groupForm.addEventListener("submit", (e) => {
@@ -291,22 +308,13 @@ document.addEventListener("DOMContentLoaded", () => {
             alert('Please enter a group name and add at least one member.');
             return;
         }
-        function getCookie(name) {
-            const value = `; ${document.cookie}`;
-            const parts = value.split(`; ${name}=`);
-            if (parts.length === 2) return parts.pop().split(';').shift();
-            return null;
-        }
 
         const token = getCookie('token');
         const data = {
             name: groupName,
             members: members
         };
-        createGroupModal.style.display = "none";
-        groupForm.reset();
-        members = [];
-        membersList.innerHTML = '';
+
         fetch('/group/create', {
             method: 'POST',
             headers: {
@@ -317,21 +325,15 @@ document.addEventListener("DOMContentLoaded", () => {
         })
             .then(response => response.json())
             .then(data => {
-                if (data.group) {
-                    alert(`Group "${data.group.name}" created successfully!\nValid numbers: ${data.validNumbers.join(', ')}`);
+                if (data.success) {
+                    alert(`Group "${data.group.name}" created successfully!`);
                     createGroupModal.style.display = "none";
                     groupForm.reset();
                     members = [];
                     membersList.innerHTML = '';
+                    fetchUserGroups(); // Refresh the group list
                 } else {
-                    let message = 'Error creating group: ' + data.message;
-                    if (data.missingNumbers && data.missingNumbers.length > 0) {
-                        message += `\nMissing numbers: ${data.missingNumbers.join(', ')}`;
-                    }
-                    if (data.validNumbers && data.validNumbers.length > 0) {
-                        message += `\nValid numbers: ${data.validNumbers.join(', ')}`;
-                    }
-                    alert(message);
+                    alert('Error creating group: ' + data.message);
                 }
             })
             .catch(error => {
@@ -340,5 +342,3 @@ document.addEventListener("DOMContentLoaded", () => {
             });
     });
 });
-
-document.addEventListener('DOMContentLoaded', fetchUserGroups);
