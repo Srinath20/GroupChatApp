@@ -1,3 +1,5 @@
+const dotenv = require('dotenv');
+dotenv.config();
 const express = require('express');
 const path = require('path');
 const sequelize = require('./util/db');
@@ -5,7 +7,6 @@ const userRoutes = require('./routes/userRoutes');
 const chatRoutes = require('./routes/chatRoutes');
 const groupRoutes = require('./routes/groupRoutes');
 const cors = require('cors');
-const dotenv = require('dotenv');
 const http = require('http');
 const { Server } = require('socket.io');
 const User = require('./models/user');
@@ -13,13 +14,11 @@ const Group = require('./models/Group');
 const Message = require('./models/message');
 const UserGroups = require('./models/userGroups');
 
-dotenv.config();
-
 const app = express();
 const server = http.createServer(app);
 const io = new Server(server);
 
-const PORT = 3000;
+const PORT = process.env.PORT;
 
 // Set up associations
 const models = {
@@ -37,7 +36,7 @@ Object.keys(models).forEach(modelName => {
 app.use(express.json());
 app.use(express.urlencoded({ extended: true }));
 app.use(cors({
-    origin: 'http://localhost:3000',
+    origin: process.env.BASE_URL,
     methods: ['GET', 'POST', 'PUT', 'DELETE']
 }));
 

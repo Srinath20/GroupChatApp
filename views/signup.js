@@ -1,6 +1,6 @@
 document.addEventListener('DOMContentLoaded', () => {
     const signupForm = document.getElementById('signupForm');
-
+    const BASE_URL = '<%= process.env.BASE_URL %>';
     signupForm.addEventListener('submit', async (e) => {
         e.preventDefault(); // Prevent the form from submitting the traditional way
         const name = document.getElementById('name').value;
@@ -15,7 +15,7 @@ document.addEventListener('DOMContentLoaded', () => {
         };
 
         try {
-            const response = await fetch('http://localhost:3000/user/signup', {
+            const response = await fetch(`${BASE_URL}/user/signup`, {
                 method: 'POST',
                 headers: {
                     'Content-Type': 'application/json'
