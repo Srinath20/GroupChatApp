@@ -2,7 +2,7 @@ const express = require('express');
 const router = express.Router();
 const User = require('../models/user');
 const Message = require('../models/message');
-const Group = require('../models/Group');
+const Group = require('../models/group');
 const UserGroups = require('../models/userGroups');
 const jwt = require('jsonwebtoken');
 

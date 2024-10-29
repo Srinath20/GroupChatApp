@@ -1,6 +1,7 @@
 document.addEventListener('DOMContentLoaded', () => {
     const signupForm = document.getElementById('signupForm');
-    const BASE_URL = '<%= process.env.BASE_URL %>';
+    const BASE_URL = 'http://13.60.180.239:3000';
+
     signupForm.addEventListener('submit', async (e) => {
         e.preventDefault(); // Prevent the form from submitting the traditional way
         const name = document.getElementById('name').value;

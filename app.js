@@ -10,7 +10,7 @@ const cors = require('cors');
 const http = require('http');
 const { Server } = require('socket.io');
 const User = require('./models/user');
-const Group = require('./models/Group');
+const Group = require('./models/group');
 const Message = require('./models/message');
 const UserGroups = require('./models/userGroups');
 
@@ -20,7 +20,6 @@ const io = new Server(server);
 
 const PORT = process.env.PORT;
 
-// Set up associations
 const models = {
     User,
     Group,
