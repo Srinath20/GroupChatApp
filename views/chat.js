@@ -3,6 +3,7 @@ const username = localStorage.getItem('username');
 const groupList = document.getElementById('groupList');
 let currentGroupId = null;
 
+
 function getCookie(name) {
     const value = `; ${document.cookie}`;
     const parts = value.split(`; ${name}=`);
@@ -76,37 +77,84 @@ async function fetchGroupMessages(groupId) {
 
 function displayMessages(messages) {
     const messageList = document.getElementById('messages');
-    messageList.innerHTML = ''; // Clear existing messages
+    messageList.innerHTML = '';
 
     if (messages.length === 0) {
         const emptyMessage = document.createElement('li');
-        emptyMessage.textContent = 'No messages in this group yet.';
+        emptyMessage.textContent = 'No messages in the group yet.';
         messageList.appendChild(emptyMessage);
     } else {
         messages.forEach(msg => {
-            appendMessage(msg.User.name, msg.message);
+            appendMessage(msg.User.name, msg.message, msg.fileUrl);
         });
     }
 }
 
-function appendMessage(username, message, isSystemMessage = false) {
+function appendMessage(username, message, fileUrl = null) {
     const messageList = document.getElementById('messages');
     const newMessage = document.createElement('li');
-    newMessage.textContent = isSystemMessage ? message : `${username}: ${message}`;
-    if (isSystemMessage) {
-        newMessage.classList.add('system-message');
+    newMessage.textContent = `${username}: ${message}`;
+
+    if (fileUrl) {
+        const fileLink = document.createElement('a');
+        fileLink.href = fileUrl;
+        fileLink.target = '_blank';
+        fileLink.textContent = 'View File';
+        fileLink.style.display = 'block';
+        newMessage.appendChild(document.createElement('br'));
+        newMessage.appendChild(fileLink);
     }
+    // document.getElementById('messages').appendChild(newMessage);
     messageList.appendChild(newMessage);
     messageList.scrollTop = messageList.scrollHeight;
 }
 
-function sendMessage() {
+async function sendMessage() {
     const messageInput = document.getElementById('chatInput');
+    const fileInput = document.getElementById('fileInput');
     const message = messageInput.value.trim();
-    if (message && currentGroupId) {
-        socket.emit('groupMessage', { username, message, groupId: currentGroupId });
-        appendMessage(username, message); // Immediately append the user's own message
-        messageInput.value = '';
+
+    if (!message) {
+        alert('Please enter a message');
+        return;
+    }
+
+    if (currentGroupId) {
+        try {
+            let fileUrl = null;
+
+            if (fileInput.files[0]) {
+                const formData = new FormData();
+                formData.append('file', fileInput.files[0]);
+
+                const response = await fetch('/api/upload', {
+                    method: 'POST',
+                    body: formData
+                });
+
+                if (!response.ok) {
+                    throw new Error('File upload failed');
+                }
+
+                const result = await response.json();
+                fileUrl = result.fileUrl;
+                console.log(fileUrl);
+            }
+
+            socket.emit('groupMessage', {
+                username,
+                message,
+                groupId: currentGroupId,
+                fileUrl
+            });
+            messageInput.value = '';
+            fileInput.value = '';
+
+
+        } catch (error) {
+            console.error('Error sending message:', error);
+            alert('Failed to send message. Please try again.');
+        }
     }
 }
 
@@ -130,7 +178,7 @@ function addUserToGroup() {
         .then(data => {
             if (data.success) {
                 alert('User added to the group successfully.');
-                addUserInput.value = ''; // Clear the input field
+                addUserInput.value = '';
             } else {
                 alert(data.message);
             }
@@ -175,11 +223,9 @@ function makeUserAdmin() {
         .then(data => {
             if (data.success) {
                 alert('User is now an admin of the group.');
-                console.log(data.message);
-                makeAdminInput.value = ''; // Clear the input field
+                makeAdminInput.value = '';
             } else {
                 alert(data.message || 'Failed to make user an admin.');
-                console.log(data.message);
             }
         })
         .catch(error => {
@@ -208,7 +254,7 @@ function removeUserFromGroup() {
         .then(data => {
             if (data.success) {
                 alert('User removed from the group successfully.');
-                removeUserInput.value = ''; // Clear the input field
+                removeUserInput.value = '';
             } else {
                 alert(data.message);
             }
@@ -221,13 +267,13 @@ function removeUserFromGroup() {
 
 function displayErrorMessage(message) {
     const messageList = document.getElementById('messages');
-    messageList.innerHTML = ''; // Clear existing messages
+    messageList.innerHTML = '';
     const errorMessage = document.createElement('li');
     errorMessage.textContent = message;
     errorMessage.style.color = 'red';
     messageList.appendChild(errorMessage);
 }
-
+document.addEventListener('DOMContentLoaded', displayMessages);
 document.addEventListener('DOMContentLoaded', () => {
     fetchUserGroups();
     socket.emit('joinChat', username);
@@ -235,12 +281,12 @@ document.addEventListener('DOMContentLoaded', () => {
 
 socket.on('newMessage', (msg) => {
     if (msg.groupId === currentGroupId) {
-        appendMessage(msg.User.name, msg.message);
+        appendMessage(msg.User.name, msg.message, msg.fileUrl);
     }
 });
 
 socket.on('userJoined', (msg) => {
-    appendMessage('System', msg, true);
+    appendMessage('System', msg);
 });
 
 document.getElementById('sendBtn').addEventListener('click', sendMessage);

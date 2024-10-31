@@ -11,6 +11,13 @@ const Message = sequelize.define('Message', {
         type: DataTypes.STRING,
         allowNull: false
     },
+    fileUrl: {
+        type: DataTypes.STRING,
+        allowNull: true,
+        validate: {
+            isUrl: true
+        }
+    },
     UserId: {
         type: DataTypes.INTEGER,
         allowNull: false,

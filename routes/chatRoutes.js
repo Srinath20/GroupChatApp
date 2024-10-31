@@ -3,7 +3,6 @@ const router = express.Router();
 const Message = require('../models/message');
 const User = require('../models/user');
 
-// GET /chat/messages - Get all chat messages
 router.get('/messages', async (req, res) => {
     try {
         const messages = await Message.findAll({
@@ -18,7 +17,7 @@ router.get('/messages', async (req, res) => {
     }
 });
 
-// POST /chat/message - Save chat message to the database
+
 router.post('/message', async (req, res) => {
     const { message, username } = req.body;
 

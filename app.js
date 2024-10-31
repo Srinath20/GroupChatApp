@@ -13,10 +13,48 @@ const User = require('./models/user');
 const Group = require('./models/group');
 const Message = require('./models/message');
 const UserGroups = require('./models/userGroups');
-
+const multer = require('multer');
+const multerS3 = require('multer-s3');
+const { v4: uuidv4 } = require('uuid');
 const app = express();
 const server = http.createServer(app);
 const io = new Server(server);
+const AWS = require('aws-sdk');
+const upload = multer();
+
+function uploadToS3(data, fileName) {
+    const BUCKET_NAME = process.env.BUCKET_NAME;
+    const IAM_USER_KEY = process.env.IAM_USER_KEY;
+    const IAM_USER_SECRET = process.env.IAM_USER_SECRET;
+
+    try {
+        const s3bucket = new AWS.S3({
+            accessKeyId: IAM_USER_KEY,
+            secretAccessKey: IAM_USER_SECRET,
+            region: process.env.AWS_REGION,
+        });
+        const params = {
+            Bucket: BUCKET_NAME,
+            Key: fileName,
+            Body: data,
+            ACL: 'public-read'
+        };
+
+        return new Promise((resolve, reject) => {
+            s3bucket.upload(params, (err, s3Response) => {
+                if (err) {
+                    console.error('Something went wrong', err);
+                    reject(err);
+                } else {
+                    resolve(s3Response.Location);
+                }
+            });
+        });
+    } catch (error) {
+        console.error('Error in uploadToS3:', error);
+        throw error;
+    }
+}
 
 const PORT = process.env.PORT;
 
@@ -31,6 +69,24 @@ Object.keys(models).forEach(modelName => {
         models[modelName].associate(models);
     }
 });
+app.post('/api/upload', upload.single('file'), async (req, res) => {
+    try {
+        if (!req.file) {
+            return res.status(400).json({ error: 'No file provided' });
+        }
+
+        const fileExtension = req.file.originalname.split('.').pop();
+        const uniqueFileName = `${Date.now()}-${Math.random().toString(36).substring(7)}.${fileExtension}`;
+
+        const fileUrl = await uploadToS3(req.file.buffer, uniqueFileName);
+
+        res.json({ success: true, fileUrl });
+
+    } catch (error) {
+        console.error('Error uploading file:', error);
+        res.status(500).json({ error: 'File upload failed' });
+    }
+});
 
 app.use(express.json());
 app.use(express.urlencoded({ extended: true }));
@@ -39,7 +95,28 @@ app.use(cors({
     methods: ['GET', 'POST', 'PUT', 'DELETE']
 }));
 
-app.use(express.static(path.join(__dirname, 'views'))); // Serve static files from the views folder
+app.use(express.static(path.join(__dirname, 'views')));
+const verifyToken = (req, res, next) => {
+    const token = req.headers['authorization']?.split(' ')[1];
+
+    if (!token) {
+        return res.status(403).json({
+            success: false,
+            message: 'No token provided.'
+        });
+    }
+
+    try {
+        const decoded = jwt.verify(token, process.env.TOKEN_SECRET);
+        req.user = { id: decoded.id };
+        next();
+    } catch (err) {
+        return res.status(401).json({
+            success: false,
+            message: 'Failed to authenticate token.'
+        });
+    }
+};
 
 app.get('/', (req, res) => {
     res.sendFile(path.join(__dirname, 'views', 'signup.html'));
@@ -61,14 +138,15 @@ io.on('connection', (socket) => {
         socket.join(`group_${groupId}`);
     });
 
-    socket.on('groupMessage', async ({ username, message, groupId }) => {
+    socket.on('groupMessage', async ({ username, message, groupId, fileUrl }) => {
         try {
             const user = await User.findOne({ where: { name: username } });
             if (user) {
                 const newMessage = await Message.create({
                     message,
                     UserId: user.id,
-                    groupId: groupId
+                    groupId: groupId,
+                    fileUrl
                 });
 
                 const messageWithUser = await Message.findOne({
@@ -76,8 +154,7 @@ io.on('connection', (socket) => {
                     include: [{ model: User, as: 'User', attributes: ['name'] }]
                 });
 
-                // Broadcast to all clients in the group except the sender
-                socket.to(`group_${groupId}`).emit('newMessage', messageWithUser);
+                io.to(`group_${groupId}`).emit('newMessage', messageWithUser);
             } else {
                 console.error('User not found for the given username');
             }

@@ -101,7 +101,6 @@ router.get('/:groupId/messages', verifyToken, async (req, res) => {
         const groupId = req.params.groupId;
         const userId = req.user.id;
 
-        // Check if the user is a member of the group
         const userGroup = await UserGroups.findOne({
             where: { UserId: userId, GroupId: groupId }
         });
@@ -113,7 +112,8 @@ router.get('/:groupId/messages', verifyToken, async (req, res) => {
         const messages = await Message.findAll({
             where: { groupId: groupId },
             include: [{ model: User, as: 'User', attributes: ['name'] }],
-            order: [['createdAt', 'ASC']]
+            order: [['createdAt', 'ASC']],
+            attributes: ['id', 'message', 'fileUrl', 'createdAt']
         });
 
         res.json({ success: true, messages: messages });
