@@ -192,7 +192,7 @@ io.on('connection', (socket) => {
 });
 
 // Sync database and start server
-sequelize.sync({ force: false })
+sequelize.sync({ alter: true })
     .then(() => {
         console.log('Database & tables created!');
         server.listen(PORT, () => {
