@@ -21,6 +21,46 @@ const server = http.createServer(app);
 const io = new Server(server);
 const AWS = require('aws-sdk');
 const upload = multer();
+const cron = require('cron');
+const ArchivedChat = require('./models/archivedChat');
+const { Op } = require('sequelize');
+
+async function archiveOldMessages() {
+    const oneDayAgo = new Date(new Date().setDate(new Date().getDate() - 1));
+
+    try {
+        const oldMessages = await Message.findAll({
+            where: {
+                createdAt: { [Op.lt]: oneDayAgo }
+            }
+        });
+
+        if (oldMessages.length > 0) {
+            const archivedChatsData = oldMessages.map(message => ({
+                message: message.message,
+                fileUrl: message.fileUrl,
+                UserId: message.UserId,
+                groupId: message.groupId,
+                archivedAt: new Date()
+            }));
+            await ArchivedChat.bulkCreate(archivedChatsData);
+
+            await Message.destroy({
+                where: {
+                    createdAt: { [Op.lt]: oneDayAgo }
+                }
+            });
+
+            console.log(`Archived and deleted ${oldMessages.length} old messages.`);
+        } else {
+            console.log('No messages to archive.');
+        }
+    } catch (error) {
+        console.error('Error archiving messages:', error);
+    }
+}
+
+const archiveJob = new cron.CronJob('0 0 * * *', archiveOldMessages, null, true, 'UTC');
 
 function uploadToS3(data, fileName) {
     const BUCKET_NAME = process.env.BUCKET_NAME;
@@ -191,10 +231,11 @@ io.on('connection', (socket) => {
     });
 });
 
-// Sync database and start server
 sequelize.sync({ alter: true })
     .then(() => {
         console.log('Database & tables created!');
+        archiveJob.start();
+        console.log('Cron job started for archiving 1 day old messages.');
         server.listen(PORT, () => {
             console.log(`Server is running on port ${PORT}`);
         });
